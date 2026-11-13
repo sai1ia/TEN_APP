@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>십장생패스 (마패 에디션) - Global & Local Interactive Prototype</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/MaruBuri/MaruBuri.css" />
+<style>
+  :root {
+    --bg-primary: #FAF8F4;
+    --bg-secondary: #F1EDE4;
+    --surface-dark: #1C1B19;
+    --text-primary: #181715;
+    --text-secondary: #635F58;
+    --border-subtle: #E4DFD5;
+    --brand-brass: #C59B43;
+    --brand-brass-light: #E8D4A2;
+    --status-urgent: #D94126;
+    --status-vitality: #2A7B6F;
+    /* Dynamic Region Tokens (Default: 강원 산) */
+    --region-primary: #1E5649;
+    --region-secondary: #E6F0ED;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: #1F1D1A;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 16px;
+    color: var(--text-primary);
+  }
+
+  .serif { font-family: 'MaruBuri', serif; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* 393x852 Mobile Frame */
+  .phone-frame {
+    width: 393px;
+    height: 852px;
+    max-width: 100%;
+    background: var(--bg-primary);
+    border-radius: 44px;
+    box-shadow: 0 32px 84px rgba(0,0,0,0.65), inset 0 0 0 8px #121110;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .status-bar {
+    height: 40px;
+    padding: 12px 24px 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--bg-primary);
+    z-index: 20;
+  }
+
+  .app-header {
+    padding: 8px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-primary);
+    z-index: 20;
+    gap: 6px;
+  }
+
+  .lang-switcher {
+    display: flex;
+    background: var(--bg-secondary);
+    padding: 2px;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+  }
+  .lang-btn {
+    border: none;
+    background: none;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 6px;
+    border-radius: 7px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .lang-btn.active {
+    background: var(--surface-dark);
+    color: #FAF8F4;
+  }
+
+  .tooltip-banner {
+    background: var(--region-secondary);
+    color: var(--region-primary);
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 6px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: all 0.3s ease;
+  }
+
+  .screen-container {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 86px;
+    scrollbar-width: none;
+  }
+  .screen-container::-webkit-scrollbar { display: none; }
+
+  .screen { display: none; animation: fadeIn 0.25s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* 4-Tab Bottom GNB */
+  .gnb {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 78px;
+    background: rgba(250, 248, 244, 0.96);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border-subtle);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    align-items: center;
+    padding: 0 8px 10px;
+    z-index: 30;
+  }
+  .gnb-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 4px 0;
+  }
+  .gnb-item.active { color: var(--region-primary); font-weight: 800; }
+  .gnb-mapae-badge {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #E8D4A2, #C59B43, #8F6B24);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 800;
+    margin-top: -16px;
+    box-shadow: 0 5px 14px rgba(197, 155, 67, 0.45);
+    border: 2.5px solid var(--bg-primary);
+  }
+
+  /* Common UI */
+  .card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px;
+    padding: 15px;
+    margin-bottom: 12px;
+  }
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    background: var(--region-primary);
+    color: #fff;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  }
+  .btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+  .chip-row {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 8px 18px;
+    scrollbar-width: none;
+  }
+  .chip {
+    padding: 6px 11px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid var(--border-subtle);
+    background: #fff;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .chip.active {
+    background: var(--brand-brass);
+    color: #fff;
+    border-color: var(--brand-brass);
+  }
+
+  /* Interactive Korea Map */
+  .map-box {
+    margin: 4px 18px 12px;
+    height: 292px;
+    background: radial-gradient(circle at center, #F5F1E7 0%, #EAE3D2 100%);
+    border-radius: 22px;
+    border: 1px solid var(--border-subtle);
+    position: relative;
+    overflow: hidden;
+  }
+  .region-pin {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    padding: 4px 8px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.94);
+    border: 1.5px solid var(--border-subtle);
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .region-pin.active {
+    background: var(--region-primary);
+    color: #fff;
+    border-color: #fff;
+    transform: translate(-50%, -50%) scale(1.13);
+    z-index: 5;
+  }
+  .urgent-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--status-urgent);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(217,65,38,0.6); } 70% { box-shadow: 0 0 0 6px rgba(217,65,38,0); } 100% { box-shadow: 0 0 0 0 rgba(217,65,38,0); } }
+
+  /* 3D Mapae with Hologram & Norigae Tassel */
+  .mapae-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0 6px;
+    perspective: 1000px;
+  }
+  .mapae-loop {
+    width: 34px; height: 20px;
+    border: 6px solid #B58932;
+    border-bottom: none;
+    border-radius: 20px 20px 0 0;
+    margin-bottom: -5px;
+    z-index: 2;
+  }
+  .mapae-card-wrapper {
+    width: 234px; height: 234px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.65s cubic-bezier(0.23, 1, 0.32, 1);
+    cursor: pointer;
+  }
+  .mapae-card-wrapper.flipped { transform: rotateY(180deg); }
+
+  .mapae-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    box-shadow: 0 16px 34px rgba(0,0,0,0.22), inset 0 2px 6px rgba(255,255,255,0.6), inset 0 -6px 14px rgba(92,66,18,0.5);
+    border: 5px solid #DFC27D;
+    overflow: hidden;
+  }
+  .mapae-front {
+    background: linear-gradient(135deg, #EFE0B9 0%, #C59B43 48%, #8F6B24 100%);
+    color: #2B210E;
+  }
+  .mapae-holo {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.6) 0%, rgba(160,240,220,0.25) 35%, transparent 70%);
+    mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+  .mapae-back {
+    background: var(--surface-dark);
+    color: #FAF8F4;
+    transform: rotateY(180deg);
+    border-color: var(--brand-brass);
+  }
+
+  /* Traditional Norigae Knot & Tassel */
+  .norigae-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: -4px;
+    transform-origin: top center;
+    animation: sway 3.2s ease-in-out infinite;
+  }
+  @keyframes sway { 0%, 100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+  .norigae-knot {
+    width: 22px; height: 14px;
+    background: var(--region-primary);
+    border-radius: 8px;
+    border: 2px solid var(--brand-brass-light);
+    transition: background 0.3s;
+  }
+  .norigae-tassel {
+    width: 13px; height: 42px;
+    background: repeating-linear-gradient(90deg, var(--region-primary), var(--region-primary) 2px, var(--brand-brass) 2px, var(--brand-brass) 3px);
+    border-radius: 2px 2px 6px 6px;
+    opacity: 0.92;
+  }
+
+  /* Payment Grid */
+  .pay-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .pay-option {
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-subtle);
+    background: #fff;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .pay-option.active {
+    border-color: var(--region-primary);
+    background: var(--region-secondary);
+    color: var(--region-primary);
+  }
+
+  /* Sub-tabs in Tab 4 */
+  .subtab-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--bg-secondary);
+    padding: 4px;
+    border-radius: 14px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border-subtle);
+  }
+  .subtab-btn {
+    border: none;
+    background: none;
+    padding: 9px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .subtab-btn.active {
+    background: #fff;
+    color: var(--text-primary);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+
+  /* Wooden Mapae Rack Grid */
+  .rack-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 9px;
+    background: #3B2E22;
+    padding: 14px 10px;
+    border-radius: 20px;
+    border: 3px solid #5A4634;
+    box-shadow: inset 0 4px 12px rgba(0,0,0,0.5);
+  }
+  .rack-slot {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #271E16;
+    border: 1.5px dashed #6E5844;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    color: #7D6855;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .rack-slot.collected {
+    background: linear-gradient(135deg, #E8D4A2, #C59B43);
+    border: 2px solid #FFF3D1;
+    color: #181715;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  }
+
+  /* Modal & Toast */
+  .modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(24, 23, 21, 0.75);
+    backdrop-filter: blur(4px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 22px;
+    z-index: 50;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--bg-primary);
+    border-radius: 24px;
+    padding: 22px;
+    width: 100%;
+    text-align: center;
+    border: 2px solid var(--brand-brass);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+  }
+
+  .toast {
+    position: absolute;
+    top: 94px; left: 18px; right: 18px;
+    background: var(--surface-dark);
+    color: #FAF8F4;
+    padding: 11px 14px;
+    border-radius: 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border-left: 4px solid var(--brand-brass);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.28);
+    z-index: 60;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone-frame" id="appFrame">
+  <div class="status-bar">
+    <span>22:12</span>
+    <span>5G · Global Ready</span>
+  </div>
+
+  <div class="app-header">
+    <div style="display:flex; align-items:center; gap:5px;">
+      <span class="serif" style="font-size:16px; font-weight:700;" id="brandTitle">십장생패스</span>
+      <button onclick="openAuthModal()" id="authBadgeBtn" style="background:var(--region-secondary); color:var(--region-primary); border:1px solid var(--border-subtle); border-radius:8px; padding:3px 6px; font-size:10px; font-weight:700; cursor:pointer;">
+        🛂 간편인증
+      </button>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:5px;">
+      <div class="lang-switcher">
+        <button class="lang-btn active" onclick="setLang('ko', this)">KO</button>
+        <button class="lang-btn" onclick="setLang('en', this)">EN</button>
+        <button class="lang-btn" onclick="setLang('jp', this)">JP</button>
+        <button class="lang-btn" onclick="setLang('zh', this)">ZH</button>
+      </div>
+      <button onclick="openRoulette()" style="background:var(--status-urgent); color:#fff; border:none; border-radius:12px; padding:5px 8px; font-size:10.5px; font-weight:700; cursor:pointer;" id="rouletteTopBtn">
+        🎲 룰렛
+      </button>
+    </div>
+  </div>
+
+  <div class="tooltip-banner" id="activeBanner">
+    <span>강원 '산' 패스 이용 중 🏔️ (+3일 남음)</span>
+    <span style="font-size:10.5px; opacity:0.85;">출두 준비 완료</span>
+  </div>
+
+  <div class="toast" id="toastMsg"></div>
+
+  <div class="screen-container">
+    <!-- [TAB 1] HOME / EXPLORE -->
+    <div class="screen active" id="screen-home">
+      <div style="padding:10px 18px 2px;">
+        <input type="text" id="searchInput" oninput="filterSearch()" placeholder="어느 생명력의 도시로 떠나볼까요? (정선, 신안, 단양)"
+          style="width:100%; padding:10px 13px; border-radius:12px; border:1px solid var(--border-subtle); background:#fff; font-size:12.5px;">
+      </div>
+
+      <div class="chip-row">
+        <button class="chip active" onclick="setFilter('all', this)" id="chipAll">전체 권역(10)</button>
+        <button class="chip" onclick="setFilter('urgent', this)" id="chipUrgent">🔥 긴급 소멸위기</button>
+        <button class="chip" onclick="setFilter('wellness', this)" id="chipWellness">🌿 힐링/웰니스</button>
+        <button class="chip" onclick="setFilter('art', this)" id="chipArt">🎨 문화예술 재생</button>
+      </div>
+
+      <div class="map-box" id="koreaMap">
+        <svg viewBox="0 0 300 300" style="width:100%; height:100%; opacity:0.35;">
+          <path d="M125,25 L165,30 L195,75 L220,145 L210,210 L175,245 L115,250 L95,215 L105,155 L95,95 Z" fill="#C59B43" />
+          <ellipse cx="105" cy="278" rx="18" ry="8" fill="#C59B43" />
+        </svg>
+      </div>
+
+      <div style="padding:0 18px;">
+        <div class="card" style="background:#fff; border:1.5px solid var(--region-primary); margin-bottom:0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+            <span style="font-size:10.5px; font-weight:700; color:var(--status-urgent); background:#FCECE8; padding:3px 7px; border-radius:8px;" id="cardBadge">
+              소멸위기지수 ★★★★★ (긴급 인구감소지역)
+            </span>
+            <span style="font-size:11.5px; font-weight:700; color:var(--region-primary);" id="cardSymbol">강원 · 산(山)</span>
+          </div>
+          <h3 class="serif" style="font-size:17px; margin-bottom:4px;" id="cardTitle">[강원 · 산(山)] 영월·정선 2박 3일</h3>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:11px;" id="cardDesc">폐광의 흔적에 예술의 빛을 더한 별빛 산골 여행</p>
+          <button class="btn-primary" onclick="goScreen('config')" id="homeCtaBtn">이 도시의 마패 구성하기 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- [TAB 2] PASS CONFIG & GLOBAL CHECKOUT -->
+    <div class="screen" id="screen-config" style="padding:14px 18px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button onclick="goScreen('home')" style="border:none; background:none; font-size:18px; cursor:pointer;">←</button>
+          <h2 class="serif" style="font-size:18px;" id="configHeader">강원 '산(山)' 마패 구성</h2>
+        </div>
+        <span style="font-size:11px; font-weight:700; color:var(--status-vitality);" id="guestStatusTag">✓ 정예원 어사</span>
+      </div>
+
+      <div class="card">
+        <div style="font-size:12.5px; font-weight:700; margin-bottom:8px;" id="lblDuration">1. 여행 체류 기간 선택</div>
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:7px;">
+          <button class="chip" onclick="selectDuration(32000, '당일치기', this)">당일 (32,000원)</button>
+          <button class="chip" onclick="selectDuration(40000, '1박 2일', this)">1박 2일 (40,000원)</button>
+          <button class="chip active" onclick="selectDuration(48000, '2박 3일', this)">★ 2박 3일 (48,000원)</button>
+          <button class="chip" onclick="selectDuration(89000, '7일 웰니스 워케이션', this)">🌿 7일 워케이션 (89,000원)</button>
+        </div>
+        <p id="workationNote" style="display:none; font-size:11px; color:var(--status-vitality); margin-top:8px; font-weight:600;">
+          ✓ 한옥·폐교 공유오피스 7일 프리패스 + 로컬 숙박 20% 할인권 포함
+        </p>
+      </div>
+
+      <div class="card">
+        <div style="font-size:12.5px; font-weight:700; margin-bottom:6px;" id="lblHub">2. 초광역 거점 이동 (Hub)</div>
+        <div style="background:#fff; padding:9px 11px; border-radius:10px; font-size:12.5px; font-weight:600;" id="hubRoute">
+          [서울역] ── KTX (20% 할인) ──> [제천역 도착]
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:12.5px; font-weight:700; margin-bottom:8px;" id="lblSpoke">3. 로컬 라스트마일 환승 (Spoke)</div>
+        <label style="display:flex; align-items:center; gap:7px; font-size:12.5px; margin-bottom:7px; cursor:pointer;">
+          <input type="radio" name="spoke" checked onchange="setSpoke(0)">
+          <span><b>똑버스(DRT) 무제한 패스</b> (+0원 / 배차 걱정 제로)</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:7px; font-size:12.5px; margin-bottom:7px; cursor:pointer;">
+          <input type="radio" name="spoke" onchange="setSpoke(15000)">
+          <span>제휴 관광택시 3시간 이용권 (+15,000원)</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:7px; font-size:12.5px; cursor:pointer;">
+          <input type="radio" name="spoke" onchange="setSpoke(22000)">
+          <span>쏘카 카셰어링 50% 할인권 (+22,000원)</span>
+        </label>
+      </div>
+
+      <div class="card">
+        <div style="font-size:12.5px; font-weight:700; margin-bottom:4px;" id="lblPayMethod">4. 국내·해외 간편 결제 선택 (No Korean Auth Needed)</div>
+        <div class="pay-grid">
+          <div class="pay-option active" onclick="selectPayMethod(this, 'Apple Pay / Google Pay')">🍎 Apple / Google Pay</div>
+          <div class="pay-option" onclick="selectPayMethod(this, 'Visa / Master Global Card')">💳 Visa / Master 해외카드</div>
+          <div class="pay-option" onclick="selectPayMethod(this, '네이버페이 / 카카오페이')">💚 네이버 / 카카오페이</div>
+          <div class="pay-option" onclick="selectPayMethod(this, 'Alipay+ / WeChat Pay')">🌏 Alipay+ / WeChat</div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--region-secondary); padding:11px 13px;">
+        <label style="display:flex; align-items:flex-start; gap:7px; font-size:11.5px; font-weight:600; color:var(--region-primary);">
+          <input type="checkbox" checked style="margin-top:2px;">
+          <span id="lblResidentSync">디지털 관광주민증(외국인 통합 패스) 자동 발급 및 입장료 최대 50% 할인 적용</span>
+        </label>
+      </div>
+
+      <button class="btn-primary num" id="payBtn" onclick="issueMapae()">
+        총 48,000원 결제하고 십장생 마패 하사받기
+      </button>
+    </div>
+
+    <!-- [TAB 3] MY MAPAE (3D CARD) -->
+    <div class="screen" id="screen-pass" style="padding:12px 18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11.5px; font-weight:700; color:var(--status-vitality);" id="passStatusActive">🟢 마패 활성화 중 · 여권/주민증 연동됨</span>
+        <button onclick="showToast('🚐 가장 가까운 정선 똑버스(배차 4분 전)를 호출했습니다!')" style="background:#fff; border:1px solid var(--border-subtle); border-radius:11px; padding:5px 9px; font-size:11px; font-weight:700; cursor:pointer;" id="drtCallBtn">
+          🚐 DRT 호출
+        </button>
+      </div>
+
+      <div class="mapae-stage">
+        <div class="mapae-loop"></div>
+        <div class="mapae-card-wrapper" id="mapaeCard" onclick="flipMapae()" onmousemove="tiltHolo(event)">
+          <!-- FRONT -->
+          <div class="mapae-face mapae-front">
+            <div class="mapae-holo" id="holoLayer"></div>
+            <div style="font-size:10.5px; font-weight:800; letter-spacing:2px; opacity:0.75;">十長生 馬牌 · MAPAE</div>
+            <div style="font-size:44px; margin:5px 0;" id="mapaeEmoji">🏔️</div>
+            <div class="serif" style="font-size:19px; font-weight:700;" id="mapaeTitle">강원 · 산(山)</div>
+            <div style="font-size:10.5px; font-weight:600; margin-top:4px; opacity:0.85;" id="tapFlipHint">터치하여 뒷면 QR·주민증 확인</div>
+          </div>
+          <!-- BACK -->
+          <div class="mapae-face mapae-back">
+            <div style="font-size:9.5px; color:var(--brand-brass-light); font-weight:700;" id="mapaeIdCode">ID: GW-JEONG-2026-8812</div>
+            <div style="width:88px; height:88px; background:#fff; border-radius:14px; margin:7px auto; display:flex; align-items:center; justify-content:center; color:#181715; font-weight:800; font-size:10.5px; border:3px solid var(--brand-brass);">
+              [원형 QR 인장]<br>NFC / QR SCAN
+            </div>
+            <div style="font-size:10.5px; color:#7CE0C3; font-weight:700;">✓ 디지털 관광주민증 인증 완료</div>
+            <div style="font-size:9.5px; opacity:0.75; margin-top:2px;" id="mapaeHolderText">어사 정예원 · Global Tourist Pass</div>
+          </div>
+        </div>
+        <div class="norigae-wrap">
+          <div class="norigae-knot"></div>
+          <div class="norigae-tassel"></div>
+        </div>
+      </div>
+
+      <button class="btn-primary" style="margin-bottom:10px;" onclick="tagMapae()" id="nfcTagBtn">
+        🔔 단말기에 마패 출두(NFC 태그)하기
+      </button>
+
+      <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:11px 14px;">
+        <div>
+          <div style="font-size:11px; color:var(--text-secondary);" id="lblPayback">로컬 페이백 잔액 (Local Pay)</div>
+          <div class="num" style="font-size:16.5px; font-weight:800;" id="paybackBalance">15,000원</div>
+        </div>
+        <button onclick="addPayback()" style="background:var(--brand-brass); color:#fff; border:none; border-radius:10px; padding:7px 11px; font-size:11.5px; font-weight:700; cursor:pointer;">+ 5,000원 충전</button>
+      </div>
+
+      <div style="font-size:12.5px; font-weight:700; margin:10px 0 7px;" id="lblNearbySpots">📍 내 주변 숨은 로컬 명소 (인장 획득처)</div>
+      <div class="card" style="padding:11px 13px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="collectSpot('정선 사북 로컬책방', 1500)">
+        <div>
+          <div style="font-size:12.5px; font-weight:700;">📚 정선 사북 로컬책방 (250m)</div>
+          <div style="font-size:11px; color:var(--text-secondary);">폐광촌 빈집 재생 독립서점 · 생명력 +4%</div>
+        </div>
+        <span style="font-size:10.5px; font-weight:700; color:var(--region-primary); background:var(--region-secondary); padding:4px 8px; border-radius:8px;">체크인</span>
+      </div>
+      <div class="card" style="padding:11px 13px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:0;" onclick="collectSpot('정선 5일장 할머니 국밥', 2000)">
+        <div>
+          <div style="font-size:12.5px; font-weight:700;">🍲 정선 5일장 할머니 국밥 (1.2km)</div>
+          <div style="font-size:11px; color:var(--text-secondary);">로컬 페이백 10% 즉시 적립</div>
+        </div>
+        <span style="font-size:10.5px; font-weight:700; color:var(--brand-brass); background:#fff; padding:4px 8px; border-radius:8px;">페이백</span>
+      </div>
+    </div>
+
+    <!-- [TAB 4] COLLECTION & IMPACT REPORT -->
+    <div class="screen" id="screen-collection" style="padding:14px 18px;">
+      <div class="subtab-bar">
+        <button class="subtab-btn active" id="subBtnRack" onclick="switchSubTab('rack')">🏯 십장생 마패함 (3/10)</button>
+        <button class="subtab-btn" id="subBtnReport" onclick="switchSubTab('report')">📜 여행 임팩트 리포트</button>
+      </div>
+
+      <!-- SUB-VIEW A: MAPAE RACK -->
+      <div id="subViewRack">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <h2 class="serif" style="font-size:18px;" id="rackTitle">나의 십장생 마패함</h2>
+          <span class="num" style="font-size:12.5px; font-weight:800; color:var(--brand-brass);" id="collectCountText">수집 현황 3 / 10</span>
+        </div>
+
+        <div class="card" style="padding:12px 14px;">
+          <div style="font-size:11.5px; font-weight:700; margin-bottom:6px;" id="rewardHint">🎁 KTX 30% 어사화 할인권까지 마패 2개 남았어요!</div>
+          <div style="height:8px; background:#E4DFD5; border-radius:6px; overflow:hidden;">
+            <div id="collectProgress" style="width:30%; height:100%; background:var(--brand-brass); transition:width 0.4s;"></div>
+          </div>
+        </div>
+
+        <div class="rack-grid" id="mapaeRack"></div>
+
+        <div id="grandMapaeBanner" style="display:none; margin-top:11px; background:linear-gradient(135deg, #2B210E, #5C4314); color:#F7E5B2; padding:14px; border-radius:16px; text-align:center; border:2px solid var(--brand-brass);">
+          <div style="font-size:26px;">👑</div>
+          <div class="serif" style="font-size:15px; font-weight:700; margin:3px 0;">십장생 대마패(왕의 인장) 해금 완료!</div>
+          <div style="font-size:11px; opacity:0.9;">실물 황동 NFC 마패 키링 무료 배송 신청권이 발급되었습니다.</div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; margin-top:7px;">
+          <button onclick="unlockAllDemo()" style="background:none; border:1px solid var(--border-subtle); border-radius:8px; padding:4px 8px; font-size:10.5px; color:var(--text-secondary); cursor:pointer;">
+            ✨ 데모: 10개 모두 수집해 대마패 보기
+          </button>
+        </div>
+
+        <div class="card" style="margin-top:10px; margin-bottom:0;">
+          <div style="font-size:12.5px; font-weight:700; color:var(--status-vitality); margin-bottom:6px;">🏔️ 내가 불어넣은 정선군의 생명력 +12%</div>
+          <p style="font-size:11.5px; line-height:1.5; color:var(--text-primary); background:#fff; padding:9px; border-radius:10px; margin-bottom:8px;" id="guestbookDisplay">
+            “폐광 지역의 아픔을 예술로 바꾼 삼탄아트마인과 만항재의 단풍이 오래도록 기억에 남을 것 같아요. 작은 손길이지만 이 마을에 온기가 되었길 바랍니다.”
+          </p>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="guestInput" placeholder="도시에 남길 응원 방명록 입력..." style="flex:1; padding:8px 10px; border-radius:10px; border:1px solid var(--border-subtle); font-size:11.5px;">
+            <button onclick="saveGuestbook()" style="background:var(--region-primary); color:#fff; border:none; border-radius:10px; padding:0 11px; font-size:11.5px; font-weight:700; cursor:pointer;">남기기</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUB-VIEW B: IMPACT REPORT -->
+      <div id="subViewReport" style="display:none;">
+        <div style="font-size:11px; font-weight:700; color:var(--brand-brass); margin-bottom:4px;">POST-TRIP IMPACT REPORT</div>
+        <h2 class="serif" style="font-size:18.5px; line-height:1.4; margin-bottom:12px;" id="reportHeadline">
+          “정예원 어사의 발걸음이 정선군에 새로운 숨결을 불어넣었습니다.”
+        </h2>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:11px;">
+          <div class="card" style="margin:0; padding:13px;">
+            <div style="font-size:11px; color:var(--text-secondary);">소상공인 직접 매출</div>
+            <div class="num" style="font-size:18.5px; font-weight:800; color:var(--region-primary); margin:4px 0;">124,000원</div>
+            <div style="font-size:10.5px; color:var(--status-vitality); font-weight:600;">지역 상권 100% 환원</div>
+          </div>
+          <div class="card" style="margin:0; padding:13px;">
+            <div style="font-size:11px; color:var(--text-secondary);">친환경 이동 기여</div>
+            <div class="num" style="font-size:18.5px; font-weight:800; color:var(--status-vitality); margin:4px 0;">탄소 4.2 kg</div>
+            <div style="font-size:10.5px; color:var(--text-secondary);">KTX·똑버스 이용 절감</div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:13px;">
+          <div style="font-size:12px; font-weight:700; margin-bottom:4px;">📝 여행 동기 및 사연 기록</div>
+          <p style="font-size:11.5px; color:var(--text-secondary); line-height:1.5;">
+            “복잡한 서울을 벗어나 조용한 산골에서 일하고 글을 쓰며 도시의 숨통을 틔워주고 싶었습니다.”
+          </p>
+        </div>
+
+        <div class="card" style="background:#FFF8E7; border-color:var(--brand-brass); padding:13px;">
+          <div style="font-size:13.5px; font-weight:700; margin-bottom:4px;">💌 정선군과 계속 인연을 이어갈까요?</div>
+          <p style="font-size:11.5px; color:var(--text-secondary); margin-bottom:9px;">전액 세액공제 + 다음 권역 십장생 패스 3만 포인트 즉시 지급</p>
+          <button onclick="showToast('💌 정선군 고향사랑기부제 페이지로 안전하게 연결되었습니다!')" style="width:100%; padding:11px; border-radius:11px; border:none; background:var(--brand-brass); color:#fff; font-weight:700; font-size:12.5px; cursor:pointer;">
+            10만원 고향사랑 기부하고 3만P 받기
+          </button>
+        </div>
+
+        <button class="btn-primary" style="background:var(--surface-dark);" onclick="showToast('📸 인스타그램 스토리 공유용 투명 십장생 어사 카드가 저장되었습니다!')">
+          임팩트 카드 인스타그램 스토리에 공유하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASSPORT / EMAIL QUICK AUTH MODAL (NO KOREAN CARRIER AUTH) -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-box">
+      <div style="font-size:11.5px; font-weight:700; color:var(--status-vitality);">🌐 GLOBAL & LOCAL ONE-TAP PASS</div>
+      <h3 class="serif" style="font-size:19px; margin:6px 0 8px;">여권 · 이메일 간편 인증</h3>
+      <p style="font-size:12px; color:var(--text-secondary); line-height:1.45; margin-bottom:14px;">
+        복잡한 통신사 본인인증 없이 이메일 또는 여권번호만으로 즉시 십장생 마패와 디지털 관광주민증을 발급받을 수 있습니다.
+      </p>
+      <div style="text-align:left; margin-bottom:12px;">
+        <label style="font-size:11px; font-weight:700; display:block; margin-bottom:4px;">여행자 성명 (Name)</label>
+        <input type="text" id="authNameInput" value="정예원 (Yewon Jung)" style="width:100%; padding:9px 11px; border-radius:10px; border:1px solid var(--border-subtle); font-size:12.5px; margin-bottom:8px;">
+        <label style="font-size:11px; font-weight:700; display:block; margin-bottom:4px;">여권번호 또는 이메일 (Passport / Email)</label>
+        <input type="text" id="authIdInput" value="M8812**** / yewon@travel.kr" style="width:100%; padding:9px 11px; border-radius:10px; border:1px solid var(--border-subtle); font-size:12.5px;">
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button onclick="closeAuthModal()" style="flex:1; padding:11px; border-radius:12px; border:1px solid var(--border-subtle); background:#fff; font-weight:700; cursor:pointer;">닫기</button>
+        <button onclick="saveQuickAuth()" style="flex:2; padding:11px; border-radius:12px; border:none; background:var(--region-primary); color:#fff; font-weight:700; cursor:pointer;">1초 간편 연동 완료</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REVERSE ROULETTE MODAL -->
+  <div class="modal-overlay" id="rouletteModal">
+    <div class="modal-box">
+      <div style="font-size:11.5px; font-weight:700; color:var(--status-urgent);">🔥 소멸 위기 지역 역발상 추천</div>
+      <h3 class="serif" style="font-size:19px; margin:6px 0 12px;">오늘 생명력을 불어넣을 도시는?</h3>
+      <div id="rouletteDisplay" style="padding:18px; background:var(--bg-secondary); border-radius:16px; margin-bottom:14px; border:1.5px solid var(--brand-brass);">
+        <div style="font-size:34px;" id="rouletteEmoji">🎲</div>
+        <div class="serif" style="font-size:17px; font-weight:700; margin-top:6px;" id="rouletteCity">돌리기 버튼을 눌러주세요</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button onclick="closeRoulette()" style="flex:1; padding:11px; border-radius:12px; border:1px solid var(--border-subtle); background:#fff; font-weight:700; cursor:pointer;">닫기</button>
+        <button onclick="spinRoulette()" style="flex:2; padding:11px; border-radius:12px; border:none; background:var(--status-urgent); color:#fff; font-weight:700; cursor:pointer;">룰렛 돌리기!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4-TAB GNB -->
+  <nav class="gnb">
+    <button class="gnb-item active" id="tab-home" onclick="goScreen('home')">
+      <span style="font-size:16px;">🗺️</span>
+      <span id="navHome">홈/지도</span>
+    </button>
+    <button class="gnb-item" id="tab-config" onclick="goScreen('config')">
+      <span style="font-size:16px;">🎫</span>
+      <span id="navConfig">패스구성</span>
+    </button>
+    <button class="gnb-item" id="tab-pass" onclick="goScreen('pass')">
+      <div class="gnb-mapae-badge">馬</div>
+      <span id="navPass">내 마패</span>
+    </button>
+    <button class="gnb-item" id="tab-collection" onclick="goScreen('collection')">
+      <span style="font-size:16px;">🏯</span>
+      <span id="navCollection">도감·리포트</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+const I18N = {
+  ko: {
+    brand: '십장생패스',
+    authBtn: '🛂 간편인증',
+    rouletteBtn: '🎲 룰렛',
+    searchPh: '어느 생명력의 도시로 떠나볼까요? (정선, 신안, 단양)',
+    chipAll: '전체 권역(10)',
+    chipUrgent: '🔥 긴급 소멸위기',
+    chipWellness: '🌿 힐링/웰니스',
+    chipArt: '🎨 문화예술 재생',
+    homeCta: '이 도시의 마패 구성하기 →',
+    navHome: '홈/지도',
+    navConfig: '패스구성',
+    navPass: '내 마패',
+    navCollection: '도감·리포트',
+    nfcBtn: '🔔 단말기에 마패 출두(NFC 태그)하기',
+    tapFlip: '터치하여 뒷면 QR·주민증 확인'
+  },
+  en: {
+    brand: 'Mapae Pass',
+    authBtn: '🛂 Passport ID',
+    rouletteBtn: '🎲 Spin',
+    searchPh: 'Explore revitalizing towns (Jeongseon, Sinan, Danyang...)',
+    chipAll: 'All Regions (10)',
+    chipUrgent: '🔥 Urgent Towns',
+    chipWellness: '🌿 Wellness',
+    chipArt: '🎨 Art & Culture',
+    homeCta: 'Configure Mapae Pass →',
+    navHome: 'Explore',
+    navConfig: 'Get Pass',
+    navPass: 'My Mapae',
+    navCollection: 'Rack & Impact',
+    nfcBtn: '🔔 Tap Mapae (NFC / QR Check-in)',
+    tapFlip: 'Tap to flip for QR & Tourist ID'
+  },
+  jp: {
+    brand: '十長生パス',
+    authBtn: '🛂 パスポート認証',
+    rouletteBtn: '🎲 ルーレット',
+    searchPh: '生命力あふれる地方都市へ (旌善、新安、丹陽)',
+    chipAll: '全10圏域',
+    chipUrgent: '🔥 消滅危機地域',
+    chipWellness: '🌿 癒やし・ウェルネス',
+    chipArt: '🎨 文化芸術再生',
+    homeCta: 'この地域の馬牌を作成 →',
+    navHome: 'ホーム/地図',
+    navConfig: 'パス構成',
+    navPass: 'マイ馬牌',
+    navCollection: '図鑑・レポート',
+    nfcBtn: '🔔 端末に馬牌をタッチ (NFC出頭)',
+    tapFlip: 'タップして裏面QR・観光住民証を表示'
+  },
+  zh: {
+    brand: '十长生通票',
+    authBtn: '🛂 护照认证',
+    rouletteBtn: '🎲 转盘',
+    searchPh: '探索充满生命力的小城 (旌善, 新安, 丹阳)',
+    chipAll: '全部10大区域',
+    chipUrgent: '🔥 急需活力小城',
+    chipWellness: '🌿 康养疗愈',
+    chipArt: '🎨 文艺再生',
+    homeCta: '定制此城市马牌通票 →',
+    navHome: '首页/地图',
+    navConfig: '定制通票',
+    navPass: '我的马牌',
+    navCollection: '图鉴与报告',
+    nfcBtn: '🔔 感应马牌出使 (NFC打卡)',
+    tapFlip: '点击翻转查看二维码与观光住民证'
+  }
+};
+
+const REGIONS = [
+  { id:'seoul', name:'서울', enName:'Seoul', symbol:'해(日)', emoji:'☀️', primary:'#D63826', secondary:'#FCECE8', x:38, y:26, tag:'art', urgent:false, title:'[서울 · 해(日)] 종로·중구 구도심', desc:'여행의 시작, 청계천·을지로 노포와 근대 유산 골목 탐방', hub:'[지하철 1·3호선] ── 도심 순환 ──> [종로3가·을지로]' },
+  { id:'gyeongin', name:'경인', enName:'Gyeongin', symbol:'구름(雲)', emoji:'☁️', primary:'#5B8FB9', secondary:'#EDF4FA', x:30, y:36, tag:'art', urgent:true, title:'[경인 · 구름(雲)] 연천·강화 교동도', desc:'한탄강 지질공원과 시간이 멈춘 교동도 레트로 평화 여행', hub:'[용산·청량리] ── 경원선/광역 ──> [연천역·강화터미널]' },
+  { id:'gangwon', name:'강원', enName:'Gangwon', symbol:'산(山)', emoji:'🏔️', primary:'#1E5649', secondary:'#E6F0ED', x:62, y:25, tag:'art', urgent:true, title:'[강원 · 산(山)] 영월·정선 2박 3일', desc:'폐광의 흔적에 예술의 빛을 더한 별빛 산골 여행', hub:'[서울역] ── KTX (20% 할인) ──> [제천역 도착]' },
+  { id:'chungbuk', name:'충북', enName:'Chungbuk', symbol:'돌(石)', emoji:'🪨', primary:'#4A5056', secondary:'#ECEEF0', x:52, y:44, tag:'wellness', urgent:true, title:'[충북 · 돌(石)] 단양·괴산 기암괴석', desc:'도담삼봉과 화양구곡, 단단한 내륙의 절벽 산수화', hub:'[청량리역] ── KTX-이음 ──> [단양역 도착]' },
+  { id:'chungnam', name:'충남', enName:'Chungnam', symbol:'물(水)', emoji:'🌊', primary:'#1D4E89', secondary:'#E7EFF8', x:34, y:52, tag:'wellness', urgent:true, title:'[충남 · 물(水)] 부여·서천 백제 물길', desc:'금강이 흐르는 백제 유적지와 신성리 갈대밭 슬로 투어', hub:'[용산역] ── 새마을/KTX ──> [논산·서천역]' },
+  { id:'jeonbuk', name:'전북', enName:'Jeonbuk', symbol:'대나무(竹)', emoji:'🎋', primary:'#3B7A57', secondary:'#E9F3EE', x:42, y:66, tag:'wellness', urgent:true, title:'[전북 · 대나무(竹)] 무주·진안·고창', desc:'마이산의 신비와 고창읍성 울창한 맹종죽림 산책', hub:'[용산역] ── KTX ──> [전주·정읍역 환승]' },
+  { id:'jeonnam', name:'전남', enName:'Jeonnam', symbol:'거북(龜)', emoji:'🐢', primary:'#163A5F', secondary:'#E5ECF3', x:36, y:81, tag:'wellness', urgent:true, title:'[전남 · 거북(龜)] 신안·완도 청산도', desc:'다도해의 보랏빛 퍼플섬과 슬로시티 느림의 미학', hub:'[용산역] ── KTX ──> [목포역·여객선 연계]' },
+  { id:'gyeongbuk', name:'경북', enName:'Gyeongbuk', symbol:'소나무(松)', emoji:'🌲', primary:'#2D5A27', secondary:'#E8F0E7', x:68, y:48, tag:'art', urgent:true, title:'[경북 · 소나무(松)] 봉화·청송·영양', desc:'금강송 군락지와 국제밤하늘보호공원의 고요한 치유', hub:'[청량리역] ── KTX-이음 ──> [영주·안동역]' },
+  { id:'gyeongnam', name:'경남', enName:'Gyeongnam', symbol:'학(鶴)', emoji:'🦢', primary:'#3A7D8C', secondary:'#E9F4F6', x:62, y:72, tag:'wellness', urgent:true, title:'[경남 · 학(鶴)] 남해 다랭이·하동', desc:'남해안의 우아한 해안선과 지리산 화개장터 차밭 힐링', hub:'[서울역] ── KTX ──> [진주·하동역 환승]' },
+  { id:'jeju', name:'제주', enName:'Jeju', symbol:'불로초(不老草)', emoji:'🌿', primary:'#7A3E65', secondary:'#F5ECF2', x:35, y:93, tag:'wellness', urgent:false, title:'[제주 · 불로초] 곶자왈·원도심 웰니스', desc:'한라산의 영험한 기운과 곶자왈 생태 치유 워케이션', hub:'[김포공항] ── 제휴 항공 ──> [제주공항 DRT]' }
+];
+
+let currentLang = 'ko';
+let selectedRegion = REGIONS[2];
+let basePrice = 48000;
+let spokePrice = 0;
+let payback = 15000;
+let collectedIds = ['gangwon', 'jeonnam', 'gyeongbuk'];
+let selectedPayment = 'Apple Pay / Google Pay';
+
+function setLang(lang, btn) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const t = I18N[lang];
+  document.getElementById('brandTitle').textContent = t.brand;
+  document.getElementById('authBadgeBtn').textContent = t.authBtn;
+  document.getElementById('rouletteTopBtn').textContent = t.rouletteBtn;
+  document.getElementById('searchInput').placeholder = t.searchPh;
+  document.getElementById('chipAll').textContent = t.chipAll;
+  document.getElementById('chipUrgent').textContent = t.chipUrgent;
+  document.getElementById('chipWellness').textContent = t.chipWellness;
+  document.getElementById('chipArt').textContent = t.chipArt;
+  document.getElementById('homeCtaBtn').textContent = t.homeCta;
+  document.getElementById('navHome').textContent = t.navHome;
+  document.getElementById('navConfig').textContent = t.navConfig;
+  document.getElementById('navPass').textContent = t.navPass;
+  document.getElementById('navCollection').textContent = t.navCollection;
+  document.getElementById('nfcTagBtn').textContent = t.nfcBtn;
+  document.getElementById('tapFlipHint').textContent = t.tapFlip;
+
+  renderMap();
+  showToast(`🌐 Language switched to ${lang.toUpperCase()}`);
+}
+
+function renderMap(filter = 'all', keyword = '') {
+  const map = document.getElementById('koreaMap');
+  map.querySelectorAll('.region-pin').forEach(el => el.remove());
+
+  REGIONS.forEach(r => {
+    if (filter === 'urgent' && !r.urgent) return;
+    if (filter !== 'all' && filter !== 'urgent' && r.tag !== filter) return;
+    if (keyword && !r.name.includes(keyword) && !r.enName.toLowerCase().includes(keyword.toLowerCase()) && !r.title.includes(keyword)) return;
+
+    const btn = document.createElement('button');
+    btn.className = 'region-pin' + (r.id === selectedRegion.id ? ' active' : '');
+    btn.style.left = r.x + '%';
+    btn.style.top = r.y + '%';
+    const label = currentLang === 'en' ? r.enName : r.name;
+    btn.innerHTML = `${r.urgent ? '<span class="urgent-dot"></span>' : ''}${r.emoji} ${label}`;
+    btn.onclick = () => selectRegion(r);
+    map.appendChild(btn);
+  });
+}
+
+function selectRegion(r) {
+  selectedRegion = r;
+  document.documentElement.style.setProperty('--region-primary', r.primary);
+  document.documentElement.style.setProperty('--region-secondary', r.secondary);
+
+  document.getElementById('activeBanner').innerHTML = `<span>${r.name} '${r.symbol.split('(')[0]}' 패스 선택됨 ${r.emoji} (+3일 권역)</span><span>출두 준비 완료</span>`;
+  document.getElementById('cardBadge').textContent = r.urgent ? '소멸위기지수 ★★★★★ (긴급 인구감소지역)' : '권역 특화 거점 (구도심·웰니스 활성화)';
+  document.getElementById('cardSymbol').textContent = `${r.name} · ${r.symbol}`;
+  document.getElementById('cardTitle').textContent = r.title;
+  document.getElementById('cardDesc').textContent = r.desc;
+
+  document.getElementById('configHeader').textContent = `${r.name} '${r.symbol}' 마패 구성`;
+  document.getElementById('hubRoute').textContent = r.hub;
+  document.getElementById('mapaeEmoji').textContent = r.emoji;
+  document.getElementById('mapaeTitle').textContent = `${r.name} · ${r.symbol}`;
+
+  renderMap();
+}
+
+function setFilter(type, btn) {
+  document.querySelectorAll('.chip-row .chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderMap(type, document.getElementById('searchInput').value);
+}
+
+function filterSearch() {
+  renderMap('all', document.getElementById('searchInput').value.trim());
+}
+
+function goScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelectorAll('.gnb-item').forEach(g => g.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'collection') renderRack();
+}
+
+function selectDuration(price, label, btn) {
+  basePrice = price;
+  btn.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('workationNote').style.display = label.includes('워케이션') ? 'block' : 'none';
+  updateTotal();
+}
+
+function setSpoke(extra) {
+  spokePrice = extra;
+  updateTotal();
+}
+
+function selectPayMethod(el, method) {
+  selectedPayment = method;
+  document.querySelectorAll('.pay-option').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function updateTotal() {
+  const total = (basePrice + spokePrice).toLocaleString();
+  document.getElementById('payBtn').textContent = `총 ${total}원 결제하고 십장생 마패 하사받기`;
+}
+
+function issueMapae() {
+  if (!collectedIds.includes(selectedRegion.id)) collectedIds.push(selectedRegion.id);
+  showToast(`🎊 [${selectedPayment}] 결제 완료! ${selectedRegion.name} '${selectedRegion.symbol}' 마패가 하사되었습니다!`);
+  goScreen('pass');
+}
+
+function flipMapae() {
+  document.getElementById('mapaeCard').classList.toggle('flipped');
+}
+
+function tiltHolo(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 100;
+  const y = ((e.clientY - rect.top) / rect.height) * 100;
+  const holo = document.getElementById('holoLayer');
+  holo.style.setProperty('--mx', x + '%');
+  holo.style.setProperty('--my', y + '%');
+}
+
+function tagMapae() {
+  if (!collectedIds.includes(selectedRegion.id)) collectedIds.push(selectedRegion.id);
+  showToast(`🔔 "어사 출두요!" ${selectedRegion.name} 단말기 인증 및 인장이 수집되었습니다!`);
+}
+
+function addPayback() {
+  payback += 5000;
+  document.getElementById('paybackBalance').textContent = payback.toLocaleString() + '원';
+  showToast('💰 지역사랑상품권 페이백 5,000원이 충전되었습니다.');
+}
+
+function collectSpot(place, reward) {
+  payback += reward;
+  document.getElementById('paybackBalance').textContent = payback.toLocaleString() + '원';
+  showToast(`✨ [${place}] 체크인 완료! 페이백 +${reward.toLocaleString()}원 & 인장 획득!`);
+}
+
+function switchSubTab(tab) {
+  document.getElementById('subBtnRack').classList.toggle('active', tab === 'rack');
+  document.getElementById('subBtnReport').classList.toggle('active', tab === 'report');
+  document.getElementById('subViewRack').style.display = tab === 'rack' ? 'block' : 'none';
+  document.getElementById('subViewReport').style.display = tab === 'report' ? 'block' : 'none';
+}
+
+function renderRack() {
+  const rack = document.getElementById('mapaeRack');
+  rack.innerHTML = '';
+  REGIONS.forEach(r => {
+    const isCollected = collectedIds.includes(r.id);
+    const slot = document.createElement('div');
+    slot.className = 'rack-slot' + (isCollected ? ' collected' : '');
+    slot.innerHTML = `<span>${isCollected ? r.emoji : '○'}</span><span style="font-size:9px; font-weight:700; margin-top:2px;">${r.name}</span>`;
+    slot.onclick = () => {
+      if (!isCollected) {
+        collectedIds.push(r.id);
+        renderRack();
+        showToast(`🏯 ${r.name} '${r.symbol}' 마패 인장이 도감에 추가되었습니다!`);
+      }
+    };
+    rack.appendChild(slot);
+  });
+
+  const count = collectedIds.length;
+  document.getElementById('collectCountText').textContent = `수집 현황 ${count} / 10`;
+  document.getElementById('subBtnRack').textContent = `🏯 십장생 마패함 (${count}/10)`;
+  document.getElementById('collectProgress').style.width = (count * 10) + '%';
+  document.getElementById('grandMapaeBanner').style.display = count === 10 ? 'block' : 'none';
+  document.getElementById('rewardHint').textContent = count === 10
+    ? '🎉 전국 10대 십장생 마패를 모두 완주하셨습니다!'
+    : `🎁 다음 리워드까지 마패 ${Math.max(1, 5 - count)}개 남았어요!`;
+}
+
+function unlockAllDemo() {
+  collectedIds = REGIONS.map(r => r.id);
+  renderRack();
+  showToast('👑 10개 권역 완주! 십장생 대마패(왕의 인장)가 해금되었습니다.');
+}
+
+function saveGuestbook() {
+  const val = document.getElementById('guestInput').value.trim();
+  if (!val) return;
+  document.getElementById('guestbookDisplay').textContent = `“${val}”`;
+  document.getElementById('guestInput').value = '';
+  showToast('🌱 도시 생명력 게이지가 +1% 상승했습니다!');
+}
+
+function openAuthModal() { document.getElementById('authModal').classList.add('open'); }
+function closeAuthModal() { document.getElementById('authModal').classList.remove('open'); }
+function saveQuickAuth() {
+  const name = document.getElementById('authNameInput').value.trim() || '정예원';
+  const idVal = document.getElementById('authIdInput').value.trim() || 'M8812****';
+  document.getElementById('guestStatusTag').textContent = `✓ ${name.split(' ')[0]} 어사`;
+  document.getElementById('mapaeHolderText').textContent = `${name} · Passport/ID Verified`;
+  document.getElementById('mapaeIdCode').textContent = `ID: ${idVal.split('/')[0].trim()}`;
+  document.getElementById('reportHeadline').textContent = `“${name.split(' ')[0]} 어사의 발걸음이 정선군에 새로운 숨결을 불어넣었습니다.”`;
+  closeAuthModal();
+  showToast(`🛂 ${name}님의 여권·이메일 간편 인증 및 관광주민증 연동이 완료되었습니다!`);
+}
+
+function openRoulette() { document.getElementById('rouletteModal').classList.add('open'); }
+function closeRoulette() { document.getElementById('rouletteModal').classList.remove('open'); }
+function spinRoulette() {
+  const urgentList = REGIONS.filter(r => r.urgent);
+  let i = 0;
+  const interval = setInterval(() => {
+    const pick = urgentList[i % urgentList.length];
+    document.getElementById('rouletteEmoji').textContent = pick.emoji;
+    document.getElementById('rouletteCity').textContent = `${pick.name} · ${pick.symbol}`;
+    i++;
+    if (i > 12) {
+      clearInterval(interval);
+      const finalPick = urgentList[Math.floor(Math.random() * urgentList.length)];
+      document.getElementById('rouletteEmoji').textContent = finalPick.emoji;
+      document.getElementById('rouletteCity').textContent = `당첨! ${finalPick.title}`;
+      setTimeout(() => {
+        closeRoulette();
+        selectRegion(finalPick);
+        goScreen('config');
+        showToast(`🎲 역발상 룰렛 추천: ${finalPick.name} 권역으로 이동합니다!`);
+      }, 900);
+    }
+  }, 80);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toastMsg');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+// Init
+selectRegion(REGIONS[2]);
+</script>
+</body>
+</html>
